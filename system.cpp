@@ -1,14 +1,15 @@
 #include "system.h"
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 using namespace std;
 OrderingSystem::OrderingSystem():totalRevenue(0){
 	for(int i=0;i<11;i++){
-        orderCounts[i]=0;
-    }
+		orderCounts[i]=0;
+	}
 	for(int i=0;i<10;i++){
-        salesCounts[i]=0;
-    }
+		salesCounts[i]=0;
+	}
 	initMenu(menu);
 }
 void OrderingSystem::displayMenu() const{
@@ -27,37 +28,49 @@ void OrderingSystem::placeOrder(){
 	while(true){
 		cout<<"\n[收銀點餐] 請輸入桌號(1-10,輸入0返回主選單):";
 		if(!(cin>>tableNum)){
-            cin.clear();
-            cin.ignore(1000,'\n');
-            cout<<"⚠️ 錯誤：請輸入數字。"<<endl;
-            continue;
-        }
+			cin.clear();
+			cin.ignore(1000,'\n');
+			cout<<"⚠️ 錯誤：請輸入數字。"<<endl;
+			continue;
+		}
 		if(tableNum==0)return;
 		if(tableNum<1||tableNum>10){cout<<"⚠️ 錯誤：桌號無效。"<<endl;continue;}
+		cin.ignore(1000,'\n');
 		int sessionTotal=0;
+		int startIdx=orderCounts[tableNum];
 		while(true){
-			int choice,qty;
+			string line;
 			cout<<"桌["<<tableNum<<"]-輸入「編號 數量」(輸入0返回桌號):";
-			if(!(cin>>choice)){
-                cin.clear();
-                cin.ignore(1000,'\n');
-                cout<<"⚠️ 錯誤：無效輸入。"<<endl;
-                continue;
-            }
-			if(choice==0) break;
+			if(!getline(cin,line)){
+				break;
+			}
+			if(line.empty()){
+				continue;
+			}
+			stringstream ss(line);
+			int choice;
+			if(!(ss>>choice)){
+				cout<<"⚠️ 錯誤：無效輸入。"<<endl;
+				continue;
+			}
+			if(choice==0)break;
 			if(choice<1||choice>10){
-                cout<<"⚠️ 錯誤：編號不存在。"<<endl;continue;
-            }
-			if(!(cin>>qty)){
-                cin.clear();
-            	cin.ignore(1000,'\n');
-            	cout<<"⚠️ 錯誤：數量無效。"<<endl;continue;
-            }
-			if(qty<=0) continue;
+				cout<<"⚠️ 錯誤：編號不存在。"<<endl;
+				continue;
+			}
+			int qty;
+			if(!(ss>>qty)){
+				cout<<"⚠️ 錯誤：數量無效。"<<endl;
+				continue;
+			}
+			if(qty<=0){
+				cout<<"⚠️ 錯誤：數量必須大於 0。"<<endl;
+				continue;
+			}
 			if(orderCounts[tableNum]>=50){
-                cout<<"⚠️ 錯誤：點單量已滿。"<<endl;
-                break;
-            }
+				cout<<"⚠️ 錯誤：點單量已滿。"<<endl;
+				break;
+			}
 			int cost=menu[choice-1].getPrice()*qty;
 			salesCounts[choice-1]+=qty;
 			totalRevenue+=cost;
@@ -73,35 +86,40 @@ void OrderingSystem::placeOrder(){
 		if(sessionTotal>0){
 			cout<<"\n************************************"<<endl;
 			cout<<"📝 桌號 "<<tableNum<<" - 點餐紀錄已儲存"<<endl;
+			cout<<"本次加點明細:"<<endl;
+			for(int i=startIdx;i<orderCounts[tableNum];i++){
+				cout<<"  - "<<menu[tableOrders[tableNum][i].menuIdx].getName()<<" x"<<tableOrders[tableNum][i].quantity<<endl;
+			}
 			cout<<"本次加點小計:$"<<sessionTotal<<endl;
 			int grandTotal=0;
 			for(int i=0;i<orderCounts[tableNum];i++){
-                grandTotal+=tableOrders[tableNum][i].subtotal;
-            }
+				grandTotal+=tableOrders[tableNum][i].subtotal;
+			}
 			cout<<"該桌累積總額:$"<<grandTotal<<endl;
 			cout<<"************************************"<<endl;
 		}
 	}
 }
 void OrderingSystem::recordDelivery(){
-	int tableNum,choice,qty;
+	int tableNum;
 	while(true){
 		cout<<"\n[出餐作業] 請輸入桌號(1-10,輸入0返回主選單):";
 		if(!(cin>>tableNum)){
-            cin.clear();
-            cin.ignore(1000,'\n');
-            cout<<"⚠️ 錯誤：請輸入數字。"<<endl;
-            continue;
-        }
-		if(tableNum==0) return;
+			cin.clear();
+			cin.ignore(1000,'\n');
+			cout<<"⚠️ 錯誤：請輸入數字。"<<endl;
+			continue;
+		}
+		if(tableNum==0)return;
 		if(tableNum<1||tableNum>10){
-            cout<<"⚠️ 錯誤：桌號無效。"<<endl;
-            continue;
-        }
+			cout<<"⚠️ 錯誤：桌號無效。"<<endl;
+			continue;
+		}
 		if(orderCounts[tableNum]==0){
-            cout<<"⚠️ 錯誤：該桌無點餐紀錄。"<<endl;
-            continue;
-    	}
+			cout<<"⚠️ 錯誤：該桌無點餐紀錄。"<<endl;
+			continue;
+		}
+		cin.ignore(1000,'\n');
 		while(true){
 			cout<<"\n--- 桌號 ["<<tableNum<<"] 待出餐清單 ---"<<endl;
 			bool hasPending=false;
@@ -114,26 +132,35 @@ void OrderingSystem::recordDelivery(){
 			}
 			if(!hasPending){cout<<"此桌餐點已全數送達！"<<endl;break;}
 			cout<<"------------------------------------"<<endl;
+			string line;
 			cout<<"請輸入「編號 數量」(輸入0返回桌號):";
-			if(!(cin>>choice)){
-                cin.clear();
-                cin.ignore(1000,'\n');
-                cout<<"⚠️ 錯誤：無效輸入。"<<endl;
-                continue;
-            }
-			if(choice==0) break;
+			if(!getline(cin,line)){
+				break;
+			}
+			if(line.empty()){
+				continue;
+			}
+			stringstream ss(line);
+			int choice;
+			if(!(ss>>choice)){
+				cout<<"⚠️ 錯誤：無效輸入。"<<endl;
+				continue;
+			}
+			if(choice==0)break;
 			if(choice<1||choice>10){
-                cout<<"⚠️ 錯誤：編號無效。"<<endl;
-                continue;
-            }
-			if(!(cin>>qty)){
-                cin.clear();
-                cin.ignore(1000,'\n');
-                cout<<"⚠️ 錯誤：數量無效。"<<endl;
-                continue;
-            }
-			if(qty<=0) continue;
-			int targetIdx=choice-1,remaining=qty;
+				cout<<"⚠️ 錯誤：編號無效。"<<endl;
+				continue;
+			}
+			int qty;
+			if(!(ss>>qty)){
+				cout<<"⚠️ 錯誤：數量無效。"<<endl;
+				continue;
+			}
+			if(qty<=0){
+				cout<<"⚠️ 錯誤：數量必須大於 0。"<<endl;
+				continue;
+			}
+			int targetIdx=choice-1,remaining=qty,deliveredCount=0;
 			for(int i=0;i<orderCounts[tableNum]&&remaining>0;i++){
 				if(tableOrders[tableNum][i].menuIdx==targetIdx){
 					int canDeliver=tableOrders[tableNum][i].quantity-tableOrders[tableNum][i].deliveredQty;
@@ -141,14 +168,40 @@ void OrderingSystem::recordDelivery(){
 						int toAdd=(remaining>canDeliver)?canDeliver:remaining;
 						tableOrders[tableNum][i].deliveredQty+=toAdd;
 						remaining-=toAdd;
+						deliveredCount+=toAdd;
 					}
 				}
 			}
-			cout<<"✅ 出餐紀錄更新成功！"<<endl;
+			if(deliveredCount>0){
+				cout<<"✅ 成功出餐 "<<menu[targetIdx].getName()<<" 共 "<<deliveredCount<<" 份！"<<endl;
+			}else{
+				cout<<"⚠️ 錯誤：此品項不需出餐，或數量無效。"<<endl;
+			}
 		}
 	}
 }
-void OrderingSystem::showPendingList() const{
+void OrderingSystem::showTableDetails() const{
+	cout<<"\n####################################"<<endl;
+	cout<<"[ 各桌詳情與出餐進度 ]"<<endl;
+	cout<<"####################################"<<endl;
+	bool active=false;
+	for(int i=1;i<=10;i++){
+		if(orderCounts[i]==0)continue;
+		active=true;
+		int tableSum=0;
+		cout<<"[ 桌號 "<<i<<" ]"<<endl;
+		for(int j=0;j<orderCounts[i];j++){
+			string statusIcon="❌";
+			if(tableOrders[i][j].deliveredQty==tableOrders[i][j].quantity)statusIcon="✅";
+			else if(tableOrders[i][j].deliveredQty>0)statusIcon="⚠️";
+			cout<<tableOrders[i][j].menuIdx+1<<". "<<statusIcon<<" "<<left<<setw(16)<<menu[tableOrders[i][j].menuIdx].getName()<<"x"<<setw(3)<<tableOrders[i][j].quantity<<"$"<<tableOrders[i][j].subtotal<<endl;
+			tableSum+=tableOrders[i][j].subtotal;
+		}
+		cout<<" > 應收合計:$"<<tableSum<<endl;
+		cout<<"------------------------------------"<<endl;
+	}
+	if(!active)cout<<"目前沒有點單紀錄。"<<endl;
+
 	cout<<"\n------------------------------------"<<endl;
 	cout<<"[ 全場待出餐總量統計 ]"<<endl;
 	cout<<"------------------------------------"<<endl;
@@ -170,28 +223,6 @@ void OrderingSystem::showPendingList() const{
 	if(!somethingToDo)cout<<"🎉 賀！目前全場餐點皆已出齊！"<<endl;
 	cout<<"------------------------------------"<<endl;
 }
-void OrderingSystem::showTableDetails() const{
-	cout<<"\n####################################"<<endl;
-	cout<<"[ 各桌詳情與出餐進度 ]"<<endl;
-	cout<<"####################################"<<endl;
-	bool active=false;
-	for(int i=1;i<=10;i++){
-		if(orderCounts[i]==0) continue;
-		active=true;
-		int tableSum=0;
-		cout<<"[ 桌號 "<<i<<" ]"<<endl;
-		for(int j=0;j<orderCounts[i];j++){
-			string statusIcon="❌";
-			if(tableOrders[i][j].deliveredQty==tableOrders[i][j].quantity) statusIcon="✅";
-			else if(tableOrders[i][j].deliveredQty>0) statusIcon="⚠️";
-			cout<<tableOrders[i][j].menuIdx+1<<". "<<statusIcon<<" "<<left<<setw(16)<<menu[tableOrders[i][j].menuIdx].getName()<<"x"<<setw(3)<<tableOrders[i][j].quantity<<"$"<<tableOrders[i][j].subtotal<<endl;
-			tableSum+=tableOrders[i][j].subtotal;
-		}
-		cout<<" > 應收合計:$"<<tableSum<<endl;
-		cout<<"------------------------------------"<<endl;
-	}
-	if(!active) cout<<"目前沒有點單紀錄。"<<endl;
-}
 void OrderingSystem::showTotalStatistics() const{
 	cout<<"\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 	cout<<"[ 今日收班銷售結算報表 ]"<<endl;
@@ -202,4 +233,75 @@ void OrderingSystem::showTotalStatistics() const{
 	cout<<"------------------------------------"<<endl;
 	cout<<"今日總營業額:$"<<totalRevenue<<endl;
 	cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+}
+void OrderingSystem::checkoutTable(){
+	int tableNum;
+	while(true){
+		cout<<"\n[櫃檯結帳] 請輸入結帳桌號(1-10,輸入0返回主選單):";
+		if(!(cin>>tableNum)){
+			cin.clear();
+			cin.ignore(1000,'\n');
+			cout<<"⚠️ 錯誤：請輸入數字。"<<endl;
+			continue;
+		}
+		if(tableNum==0)return;
+		if(tableNum<1||tableNum>10){
+			cout<<"⚠️ 錯誤：桌號無效。"<<endl;
+			continue;
+		}
+		if(orderCounts[tableNum]==0){
+			cout<<"⚠️ 錯誤：該桌目前無點餐紀錄，不需結帳。"<<endl;
+			continue;
+		}
+		int grandTotal=0;
+		cout<<"\n--- 桌號 ["<<tableNum<<"] 結帳明細 ---"<<endl;
+		for(int i=0;i<orderCounts[tableNum];i++){
+			string statusIcon="❌";
+			if(tableOrders[tableNum][i].deliveredQty==tableOrders[tableNum][i].quantity)statusIcon="✅";
+			else if(tableOrders[tableNum][i].deliveredQty>0)statusIcon="⚠️";
+			cout<<tableOrders[tableNum][i].menuIdx+1<<". "<<statusIcon<<" "<<left<<setw(16)<<menu[tableOrders[tableNum][i].menuIdx].getName()<<"x"<<setw(3)<<tableOrders[tableNum][i].quantity<<"$"<<tableOrders[tableNum][i].subtotal<<endl;
+			grandTotal+=tableOrders[tableNum][i].subtotal;
+		}
+		cout<<"------------------------------------"<<endl;
+		cout<<"應收總金額:$"<<grandTotal<<endl;
+		cout<<"------------------------------------"<<endl;
+		int cash;
+		while(true){
+			cout<<"請輸入顧客支付金額(輸入0返回主選單):";
+			if(!(cin>>cash)){
+				cin.clear();
+				cin.ignore(1000,'\n');
+				cout<<"⚠️ 錯誤：請輸入有效的金額。"<<endl;
+				continue;
+			}
+			if(cash==0)return;
+			if(cash<grandTotal){
+				cout<<"⚠️ 錯誤：支付金額不足（還差 $"<<grandTotal-cash<<"）。"<<endl;
+				continue;
+			}
+			break;
+		}
+		int change=cash-grandTotal;
+		cout<<"找零金額:$"<<change<<endl;
+		int confirm;
+		while(true){
+			cout<<"是否確認結帳完成？(1:確認結帳, 0:取消並返回主畫面):";
+			if(!(cin>>confirm)){
+				cin.clear();
+				cin.ignore(1000,'\n');
+				cout<<"⚠️ 錯誤：請輸入 1 或 0。"<<endl;
+				continue;
+			}
+			if(confirm==0){
+				cout<<"❌ 已取消結帳，返回主畫面。"<<endl;
+				return;
+			}
+			if(confirm==1){
+				orderCounts[tableNum]=0;
+				cout<<"✅ 結帳成功！桌號 ["<<tableNum<<"] 資料已清空，可接待下一桌客人。"<<endl;
+				return;
+			}
+			cout<<"⚠️ 錯誤：無效選擇，請輸入 1 或 0。"<<endl;
+		}
+	}
 }
