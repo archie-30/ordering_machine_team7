@@ -1,12 +1,12 @@
 #include "item.h"
 using namespace std;
 MenuItem::MenuItem(){
-    name="";
-    price=0;
+	name="";
+	price=0;
 }
 MenuItem::MenuItem(string n,int p){
-    name=n;
-    price=p;
+	name=n;
+	price=p;
 }
 string MenuItem::getName() const{
 	return name;
